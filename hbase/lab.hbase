@@ -1,0 +1,55 @@
+# Run from the repository root: hbase shell -n < hbase/lab.hbase
+namespace = 'experiment3'
+student = "#{namespace}:Student"
+course = "#{namespace}:Course"
+sc = "#{namespace}:SC"
+demo = "#{namespace}:StudentDemo"
+
+data_directory = File.expand_path('hbase/data')
+load_lab_table = lambda do |table, filename, columns, &row_key|
+  records = File.readlines(File.join(data_directory, filename), encoding: 'UTF-8').map do |line|
+    values = line.chomp.split("\t", -1)
+    raise "Wrong number of TSV columns in #{filename}: #{line}" unless values.size == columns.size
+
+    values
+  end
+  if exists(table)
+    disable(table) if is_enabled(table)
+    drop(table)
+  end
+  families = columns.map { |column| column.split(':', 2).first }.uniq
+  create(table, *families)
+  records.each do |values|
+    row = row_key.call(values)
+    columns.zip(values).each { |column, value| put(table, row, column, value) }
+  end
+end
+
+create_namespace(namespace) unless @shell.admin.list_namespace.include?(namespace)
+student_columns = %w[Info:S_Name Info:S_No Info:S_Sex Info:S_Age]
+course_columns = %w[Info:C_No Info:C_Name Info:C_Credit]
+sc_columns = %w[Info:SC_Sno Info:SC_Cno Score:Value]
+
+load_lab_table.call(student, 'student.tsv', student_columns) { |values| values[0] }
+load_lab_table.call(course, 'course.tsv', course_columns) { |values| values[0] }
+load_lab_table.call(sc, 'sc.tsv', sc_columns) { |values| "#{values[0]}##{values[1]}" }
+
+list
+[student, course, sc].each do |table|
+  scan(table)
+  count(table)
+end
+
+load_lab_table.call(demo, 'student.tsv', student_columns) { |values| values[0] }
+alter(demo, { 'NAME' => 'Demo' })
+put(demo, 'Zhangsan', 'Demo:Note', 'example')
+scan(demo, { 'COLUMNS' => ['Demo:Note'] })
+deleteall(demo, 'Zhangsan', 'Demo:Note')
+scan(demo, { 'COLUMNS' => ['Demo:Note'] })
+alter(demo, { 'NAME' => 'Demo', 'METHOD' => 'delete' })
+put(demo, 'Lisi', 'Info:S_Age', '25')
+get(demo, 'Lisi', { 'COLUMN' => 'Info:S_Age' })
+deleteall(demo, 'Mary')
+count(demo)
+truncate(demo)
+count(demo)
