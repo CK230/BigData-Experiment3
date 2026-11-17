@@ -1,6 +1,6 @@
 # 实验三 PageRank 算法实现
 
-本仓库包含 HBase 操作、Hadoop MapReduce PageRank 和 Spark RDD PageRank，以及样例数据和运行命令。HBase 样例结果按原始数据和操作顺序推演，PageRank 样例结果按迭代公式计算。
+本仓库包含 HBase 操作、Hadoop MapReduce PageRank 和 Spark RDD PageRank，以及样例数据和运行命令。
 
 ## 实验环境
 
